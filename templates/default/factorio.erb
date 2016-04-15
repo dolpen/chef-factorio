@@ -1,0 +1,106 @@
+#!/bin/bash
+# /etc/init.d/factorio
+# version 0.1.0 2016-04-01 (YYYY-MM-DD)
+#
+### BEGIN INIT INFO
+# Provides:   factorio
+# Required-Start: $local_fs $remote_fs screen-cleanup
+# Required-Stop:  $local_fs $remote_fs
+# Should-Start:   $network
+# Should-Stop:    $network
+# Default-Start:  2 3 4 5
+# Default-Stop:   0 1 6
+# Short-Description:    Factorio server
+# Description:    Starts the factorio server
+### END INIT INFO
+
+#Settings
+FTPATH="/opt/factorio"
+FTBIN="$FTPATH/bin/x64"
+SERVICE="factorio"
+USERNAME="factorio"
+WORLD="world"
+CREATION="$FTBIN/$SERVICE --create $WORLD"
+INVOCATION="$FTBIN/$SERVICE --start-server $WORLD --autosave-interval 15 --autosave-slots 3 --peer-to-peer"
+ME=`whoami`
+HISTORY=256
+
+as_user() {
+  if [ "$ME" = "$USERNAME" ] ; then
+    bash -c "$1"
+  else
+    su - "$USERNAME" -c "$1"
+  fi
+}
+
+ft_start() {
+  if pgrep -u $USERNAME -f $SERVICE > /dev/null
+  then
+    echo "$SERVICE is already running!"
+  else
+    echo "Starting $SERVICE..."
+    cd $FTPATH
+    as_user "cd $FTPATH && screen -h $HISTORY -dmS factorio $INVOCATION"
+    sleep 7
+    if pgrep -u $USERNAME -f $SERVICE > /dev/null
+    then
+      echo "$SERVICE is now running."
+    else
+      echo "Error! Could not start $SERVICE!"
+    fi
+  fi
+}
+
+
+ft_stop() {
+  if pgrep -u $USERNAME -f $SERVICE > /dev/null
+  then
+    echo "Stopping $SERVICE"
+    pkill -u $USERNAME -f $SERVICE
+    sleep 10
+  else
+    echo "$SERVICE was not running."
+  fi
+  if pgrep -u $USERNAME -f $SERVICE > /dev/null
+  then
+    echo "Error! $SERVICE could not be stopped."
+  else
+    echo "$SERVICE is stopped."
+  fi
+}
+
+ft_create() {
+  as_user "cd $FTPATH && $CREATION"
+}
+
+#Start-Stop here
+case "$1" in
+start)
+ft_start
+;;
+stop)
+ft_stop
+;;
+restart)
+ft_stop
+ft_start
+;;
+create)
+ft_stop
+ft_create
+;;
+status)
+if pgrep -u $USERNAME -f $SERVICE > /dev/null
+then
+  echo "$SERVICE is running."
+else
+  echo "$SERVICE is not running."
+fi
+;;
+*)
+echo "Usage: $0 {start|stop|restart|create|status}"
+exit 1
+;;
+esac
+
+exit 0
