@@ -28,8 +28,10 @@ directory '/home/factorio' do
 end
 
 
+version = node['factorio']['version']
+
 remote_file '/opt/factorio.tar.gz' do
-  source "https://www.factorio.com/get-download/0.12.29/headless/linux64"
+  source "https://www.factorio.com/get-download/#{version}/headless/linux64"
   owner 'factorio'
   group 'factorio'
   mode 0644
